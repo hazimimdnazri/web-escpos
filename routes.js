@@ -1,9 +1,11 @@
-import express from 'express';
-import moment from 'moment';
-import { ThermalPrinter, PrinterTypes, BreakLine } from 'node-thermal-printer';
-
+import express from 'express'
+import moment from 'moment'
+import { ThermalPrinter, PrinterTypes, BreakLine } from 'node-thermal-printer'
+import path from 'path'
+import { URL } from 'url'
 
 let app = express.Router()
+const __dirname = new URL('.', import.meta.url).pathname;
 
 app.get('/', (req, res) => {
     var ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress 
@@ -30,9 +32,6 @@ app.get('/print', (req, res) => {
                 breakLine: BreakLine.WORD,
             });
         
-            const isConnected = await printer.isPrinterConnected();
-            console.log('Printer connected:', isConnected);
-        
             printer.alignCenter()
             printer.println(String(req.query.sale_id).padStart(8, '0'))
             printer.bold(true);  
@@ -40,7 +39,7 @@ app.get('/print', (req, res) => {
             printer.println(process.env.COMPANY)
             printer.drawLine('=')
             printer.bold(false);  
-            printer.leftRight(moment().format('DD/MM/YYYY'), "CASHIER 1")
+            printer.leftRight(moment().format('DD/MM/YYYY'), `CASHIER #${apiData[0].cashier_id}`)
             printer.leftRight(moment().format('HH:mm:ss'), "")
             printer.bold(true);  
             printer.newLine()
@@ -69,10 +68,13 @@ app.get('/print', (req, res) => {
             printer.newLine()
             printer.newLine()
             printer.newLine()
+
+            // console.log(printer.getText());
                     
             try {
                 await printer.execute();
-                res.send('Printing');
+                console.log(`Printing sale #${req.query.sale_id}`)
+                res.sendFile(path.join(__dirname+'/public/index.html'));
             } catch (error) {
                 res.send('Error!')
             }
