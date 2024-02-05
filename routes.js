@@ -2,10 +2,9 @@ import express from 'express'
 import moment from 'moment'
 import { ThermalPrinter, PrinterTypes, BreakLine } from 'node-thermal-printer'
 import path from 'path'
-import { URL } from 'url'
 
 let app = express.Router()
-const __dirname = new URL('.', import.meta.url).pathname;
+const __dirname = path.resolve();
 
 app.get('/', (req, res) => {
     var ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress 
@@ -37,6 +36,7 @@ app.get('/print', (req, res) => {
             printer.bold(true);  
             printer.drawLine('=')
             printer.println(process.env.COMPANY)
+            printer.println(process.env.EVENT)
             printer.drawLine('=')
             printer.bold(false);  
             printer.leftRight(moment().format('DD/MM/YYYY'), `CASHIER #${apiData[0].cashier_id}`)
