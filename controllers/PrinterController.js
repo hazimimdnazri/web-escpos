@@ -5,10 +5,22 @@ import { ThermalPrinter, PrinterTypes, BreakLine } from 'node-thermal-printer'
 const __dirname = path.resolve();
 
 const printReceipt = (req, res) => {
-    const example = async () => {
-        const response = await fetch(process.env.API+req.query.sale_id);
-        const apiData = await response.json();
+    const getData = async () => {
+        try {
+            const response = await Promise.race([
+                fetch(process.env.API+req.query.sale_id),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+            ]);
+    
+            const apiData = await response.json();
+            printData(apiData)
 
+        } catch (error){
+            res.sendFile(path.join(__dirname+'/public/timeout.html'));
+        }
+    }
+
+    const printData = async (apiData) => {
         if(apiData.status != 'error'){
             var sum = 0;
         
@@ -68,13 +80,14 @@ const printReceipt = (req, res) => {
                 console.log(`Printing sale #${req.query.sale_id}`)
                 res.sendFile(path.join(__dirname+'/public/index.html'));
             } catch (error) {
-                res.send('Error!')
+                res.send('Printer error! Please check your printer connection.')
             }
         } else {
             res.send('Sale ID is unknown.')
         }
     }
-    example()
+
+    getData()
 }
 
 export { printReceipt }
